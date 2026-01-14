@@ -130,8 +130,6 @@ console.log("📩 Webhook hit");
     const userId = message.from; // phone number
     lastSeen[userId] = Date.now();
     const userMessage = message.text.body;
-    await sendMessage(userId, aiReply);
-    console.log("📤 Sending reply to:", userId);
 
 
     // Initialize memory if not exists
@@ -149,7 +147,7 @@ if (!memory[userId]) {
     role: "system",
     content: systemPrompt + "\n\n" + getTimeContext()
   },
-  ...memoryStore[userId],
+  ...memory[userId],
   { role: "user", content: userMessage }
 ];
 
@@ -172,6 +170,8 @@ if (memory[userId].length > 20) {
 }
 
 saveMemory(memory);
+
+ console.log("📤 Sending reply to:", userId);
 
     // Send reply back to WhatsApp
     await axios.post(
