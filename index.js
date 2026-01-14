@@ -12,6 +12,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 // TIME AND DATE
 function getTimeContext() {
+console.log("Timezone:", timezone);
   const timezone = process.env.USER_TIMEZONE || "UTC";
 
   const now = new Date(
@@ -69,7 +70,7 @@ async function callGroq(messages) {
     {
       model: "llama-3.1-8b-instant",
       messages,
-      max_tokens: 120, // 👈 keeps replies short
+      max_tokens: 200, // 👈 keeps replies short
       temperature: 0.7
     },
     {
@@ -115,6 +116,7 @@ function typingDelay(text) {
 // WHATSAPP WEBHOOK
 // ======================
 app.post("/webhook", async (req, res) => {
+console.log("📩 Webhook hit");  
   try {
     // WhatsApp Cloud API format
     const entry = req.body.entry?.[0];
@@ -129,6 +131,8 @@ app.post("/webhook", async (req, res) => {
     lastSeen[userId] = Date.now();
     const userMessage = message.text.body;
     await sendMessage(userId, aiReply);
+    console.log("📤 Sending reply to:", userId);
+
 
     // Initialize memory if not exists
 const memory = loadMemory();
