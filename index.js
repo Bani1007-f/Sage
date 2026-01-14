@@ -12,7 +12,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 // TIME AND DATE
 function getTimeContext() {
-console.log("Timezone:", timezone);
+
   const timezone = process.env.USER_TIMEZONE || "UTC";
 
   const now = new Date(
@@ -20,6 +20,7 @@ console.log("Timezone:", timezone);
   );
 
   const hours = now.getHours();
+  const minutes = now.getMinutes();
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
   const isWeekend = weekday === "Saturday" || weekday === "Sunday";
 
