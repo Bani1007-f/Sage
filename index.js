@@ -165,10 +165,14 @@ app.get("/test", async (req, res) => {
       { role: "user", content: "Say hello gently and briefly." }
     ]);
 
-    res.json({ success: true, reply });
+      res.json({ success: true, reply });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
+    console.error("FULL ERROR:", err.response?.data || err.message);
+
+    res.status(500).json({
+      success: false,
+      error: err.response?.data || err.message
+    });
   }
 });
 
