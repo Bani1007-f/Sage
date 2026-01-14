@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const lastSeen = {};
 const axios = require("axios");
 
 const app = express();
@@ -7,6 +8,34 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+
+// TIME AND DATE
+function getTimeContext() {
+  const timezone = process.env.USER_TIMEZONE || "UTC";
+
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: timezone })
+  );
+
+  const hours = now.getHours();
+  const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
+  const isWeekend = weekday === "Saturday" || weekday === "Sunday";
+
+  let timeOfDay = "night";
+  if (hours >= 5 && hours < 12) timeOfDay = "morning";
+  else if (hours >= 12 && hours < 17) timeOfDay = "afternoon";
+  else if (hours >= 17 && hours < 21) timeOfDay = "evening";
+
+  return `
+Local context:
+- Date: ${now.toDateString()}
+- Time: ${now.toLocaleTimeString()}
+- Day: ${weekday}
+- Weekend: ${isWeekend ? "yes" : "no"}
+- Time of day: ${timeOfDay}
+`;
+}
 
 // ======================
 // SIMPLE IN-MEMORY STORE
@@ -39,7 +68,9 @@ async function callGroq(messages) {
     "https://api.groq.com/openai/v1/chat/completions",
     {
       model: "llama-3.1-8b-instant",
-      messages
+      messages,
+      max_tokens: 120, // 👈 keeps replies short
+      temperature: 0.7
     },
     {
       headers: {
@@ -50,6 +81,23 @@ async function callGroq(messages) {
   );
 
   return response.data.choices[0].message.content;
+}
+
+async function sendMessage(to, text) {
+  return axios.post(
+    `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+    {
+      messaging_product: "whatsapp",
+      to,
+      text: { body: text }
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
 }
 
 // ======================
@@ -78,7 +126,9 @@ app.post("/webhook", async (req, res) => {
     }
 
     const userId = message.from; // phone number
+    lastSeen[userId] = Date.now();
     const userMessage = message.text.body;
+    await sendMessage(userId, aiReply);
 
     // Initialize memory if not exists
 const memory = loadMemory();
@@ -90,11 +140,15 @@ if (!memory[userId]) {
 
 
     // Build conversation
-    const conversation = [
-      { role: "system", content: systemPrompt },
-      ...memory[userId],
-      { role: "user", content: userMessage }
-    ];
+  const conversation = [
+  {
+    role: "system",
+    content: systemPrompt + "\n\n" + getTimeContext()
+  },
+  ...memoryStore[userId],
+  { role: "user", content: userMessage }
+];
+
 
     // Call Groq
     let aiReply = await callGroq(conversation);
@@ -175,6 +229,68 @@ app.get("/test", async (req, res) => {
     });
   }
 });
+
+setInterval(async () => {
+  const now = Date.now();
+
+  for (const userId in lastSeen) {
+    const hoursAway = (now - lastSeen[userId]) / (1000 * 60 * 60);
+
+    // If quiet for 6–8 hours
+    if (hoursAway > 6 && hoursAway < 8) {
+      try {
+        await axios.post(
+          `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+          {
+            messaging_product: "whatsapp",
+            to: userId,
+            text: {
+              body: "Hey. Just checking in — no need to reply if you’re resting. I’m here 🌱"
+            }
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+
+        // prevent repeated pings
+        lastSeen[userId] = now;
+      } catch (err) {
+        console.error("Quiet check-in failed");
+      }
+    }
+  }
+}, 30 * 60 * 1000); // checks every 30 mins
+
+setInterval(async () => {
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+
+  for (const userId in lastSeen) {
+    try {
+      // Morning reminder (6–9am)
+      if (hour === 6 && minute === 30) {
+        await sendMessage(
+          userId,
+          "Morning reminder 💊 Have you taken your Betaxolol yet?"
+        );
+      }
+
+      // Night reminder (8–10pm)
+      if (hour === 21) {
+        await sendMessage(
+          userId,
+          "It’s evening 🌙 Betaxolol + Xalatan time. I’ll sit with you for a moment."
+        );
+      }
+    } catch {}
+  }
+}, 60 * 60 * 1000);
+
 
 // ======================
 app.listen(PORT, () => {
