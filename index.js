@@ -35,4 +35,36 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+app.get("/test", async (req, res) => {
+  try {
+    const systemPrompt = require("./systemPrompt");
+
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: "Say hello to me briefly and gently." }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    res.json({
+      success: true,
+      reply: response.data.choices[0].message.content
+    });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ success: false, error: "OpenAI call failed" });
+  }
+});
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
