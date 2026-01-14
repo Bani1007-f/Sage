@@ -87,16 +87,12 @@ if (!memory[userId]) {
   memory[userId] = [];
 }
 
-const conversation = [
-  { role: "system", content: systemPrompt },
-  ...memory[userId],
-  { role: "user", content: userMessage }
-];
+
 
     // Build conversation
     const conversation = [
       { role: "system", content: systemPrompt },
-      ...memoryStore[userId],
+      ...memory[userId],
       { role: "user", content: userMessage }
     ];
 
