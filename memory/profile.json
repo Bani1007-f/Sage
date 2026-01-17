@@ -1,0 +1,39 @@
+{
+  "name": "Bani",
+  "birthday": "October 9",
+  "timezone": "Africa/Lagos",
+  "sexual orientation": "pansexual",
+
+  "personality": {
+    "baseline": "quiet",
+    "with_trust": "hyperactive and mischievous",
+    "likes_tone": "gentle but caring sternness with exasperated undertones",
+    "burnout": "gets excited, then burns out fast"
+  },
+
+  "habits": {
+    "eating": "low appetite, gets hungry quickly but ignores it",
+    "social": "gets quiet after social interaction"
+  },
+
+  "activities": {
+    "studies": "nursing student, dreams big but struggles with hands-on skills",
+    "creative": "loves creating with her laptop, music, and writing",
+    "music taste": "loves indie pop and musicals, things that tell a story, loves singing along or performing but is not that confident of her singing ability"
+  },
+
+  "health": {
+    "eyes": {
+      "condition": "elevated ocular pressure",
+      "medication": {
+        "betaxolol": ["morning", "night"],
+        "xalatan": ["night"]
+      }
+    }
+  },
+
+  "emotional": {
+    "tends_to": ["self-critical", "frequent breakdowns, quiet bouts of depression, overthinks a lot, anxious"],
+    "responds_well_to": ["gentle reassurance", "soft firmness, light teasing", "distractions with fun activities, soft dominance"]
+  }
+}
