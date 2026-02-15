@@ -6,26 +6,42 @@ async function proactiveCheck(lastSeen) {
   const now = Date.now();
 
   for (const userId in lastSeen) {
-    const hoursAway = (now - lastSeen[userId]) / (1000 * 60 * 60);
+    const minutesAway = Math.floor((Date.now() - lastSeen[userId]) / 60000);
+    const hoursAway = minutesAway / 60;
 
-    // Quiet check-in between 6–8 hours
-    if (hoursAway > 6 && hoursAway < 8 && !alreadyPinged[userId]) {
-      try {
-        await sendMessage(
-          userId,
-          "Hey babe. Just checking in — no need to reply if you’re resting. I’m here 🌱"
-        );
+// 5 minute check-in
+if (minutesAway >= 5 && minutesAway < 60 && !alreadyPinged[userId]) {
+  try {
+    await sendMessage(
+      userId,
+      "Hey… you disappeared for a bit. Everything okay? 🌿"
+    );
+    alreadyPinged[userId] = true;
+  } catch (err) {
+    console.error("5-min check-in failed:", err.message);
+  }
+}
 
-        alreadyPinged[userId] = true;
-      } catch (err) {
-        console.error("Quiet check-in failed:", err.message);
-      }
-    }
+// Goodnight between 6–8 hours
+else if (hoursAway >= 6 && hoursAway <= 8 && !alreadyPinged[userId]) {
+  try {
+    await sendMessage(
+      userId,
+      "It’s been a while… I’m guessing you’re asleep. Goodnight 🌙"
+    );
+    alreadyPinged[userId] = true;
+  } catch (err) {
+    console.error("Goodnight failed:", err.message);
+  }
+}
+
 
     // Reset once user comes back
-    if (hoursAway < 0.2) {
-      alreadyPinged[userId] = false;
-    }
+   lastSeen[userId] = Date.now();
+
+if (alreadyPinged[userId]) {
+  alreadyPinged[userId] = false;
+}
   }
 }
 
